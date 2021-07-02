@@ -19,22 +19,23 @@ namespace ScanTerminal.Tests
     {
         private readonly IReadOnlyList<Product> _products = new List<Product>()
         {
-            Product.Create("A", 1.00m),
-            BulkPriceProduct.Create("B", 1.10m, 2, 2.00m),
-            Product.Create("C", 1.20m),
-            BulkPriceProduct.Create("D", 1.30m, 3, 3.00m),
+            BulkPriceProduct.Create("A", 1.25m, 3, 3.00m),
+            Product.Create("B", 4.25m),
+            BulkPriceProduct.Create("C", 1.00m, 6, 5.00m),
+            Product.Create("D", 0.75m),
         }.AsReadOnly();
 
         [Theory]
-        [InlineData("ABCD", 4.60)]
-        [InlineData("AB C  D  ", 4.60)]
-        [InlineData("", 0)]
-        [InlineData("   ", 0)]
-        [InlineData("ABCDD", 5.90)]
-        [InlineData("BBBBB", 5.10)]
-        [InlineData("BBDDD", 5.00)]
-        [InlineData("BBBDDDD", 7.40)]
-        [InlineData("ABABABCDCDCDCD", 15.20)]
+        [InlineData("ABCD", 7.25)]
+        [InlineData("CCCCCCC", 6)]
+        [InlineData("ABCDABA", 13.25)]
+        [InlineData("AB C  D  ", 7.25)] // including whitespace
+        [InlineData("", 0)]             // empty
+        [InlineData("   ", 0)]          // all whitespace
+        [InlineData("AABCDCCCC", 12.5)] // all codes without bulk
+        [InlineData("AABCDACCCCC", 13)] // all codes with bulk
+        [InlineData("AAACCCCCC", 8)]    // bulk only
+        [InlineData("AABCCDAABCCDCCC", 20.25)] // all codes with unit & bulk
         public void ScanProduct_ValidProduct_ComputeTotal(string cart, decimal total)
         {
             // Arrange
@@ -90,6 +91,75 @@ namespace ScanTerminal.Tests
             // Assert
             var exception = Assert.Throws<InvalidOperationException>(actual);
             Assert.Equal($"{code} product do not exist", exception.Message);
+        }
+
+        [Theory]
+        [InlineData("aBCD")]
+        [InlineData("ABCd")]
+        public void ScanProduct_ProductNotExist_SetTotalToZero(string cart)
+        {
+            // Arrange
+            var pricing = PricingList.Create();
+            foreach(var p in _products)
+            {
+                pricing.AddProduct(p);
+            }
+            var terminal = new PointOfSaleTerminal(pricing);
+            
+            // Act
+            foreach(var p in cart)
+            {
+                try
+                {
+                    terminal.ScanProduct(p.ToString());
+                }
+                catch
+                {
+                    break;
+                }
+                
+            }
+
+            // Assert
+            Assert.Equal(0, terminal.Total);
+        }
+
+        [Theory]
+        [InlineData("aBCD")]
+        [InlineData("ABCd")]
+        public void Reset_When_ProductNotExist_BecomeAvilable(string cart)
+        {
+            // Arrange
+            var pricing = PricingList.Create();
+            foreach(var p in _products)
+            {
+                pricing.AddProduct(p);
+            }
+            var terminal = new PointOfSaleTerminal(pricing);
+            const string LEGAL_CART = "ABCD";
+            const decimal LEGAL_TOTAL = 7.25m;
+            
+            // Act
+            foreach(var p in cart)
+            {
+                try
+                {
+                    terminal.ScanProduct(p.ToString());
+                }
+                catch
+                {
+                    terminal.Reset();
+                    break;
+                }
+            }
+
+            foreach(var p in LEGAL_CART)
+            {
+                terminal.ScanProduct(p.ToString());
+            }
+
+            // Assert
+            Assert.Equal(LEGAL_TOTAL, terminal.Total);
         }
     }
 }

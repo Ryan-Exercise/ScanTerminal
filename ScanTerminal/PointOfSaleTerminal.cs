@@ -15,17 +15,24 @@ namespace ScanTerminal
 {
     public class PointOfSaleTerminal
     {
-        public PricingList Pricing { get; set; }
         private IDictionary<string, int> _scannedWithoutBulk = new Dictionary<string, int>();
+        private bool _illegal = false;
+
+        public PricingList Pricing { get; set; }
         public decimal Total { get; private set; }
         public PointOfSaleTerminal(PricingList list)
         {
             Pricing = list;
+            Total = 0;
         }
 
 
         public void ScanProduct(string code)
         {
+            if (_illegal)
+            {
+                throw new InvalidOperationException("Illegal sate: please reset Scan Terminal");
+            }
             if(string.IsNullOrEmpty(code) || string.IsNullOrWhiteSpace(code))
             {
                 return;
@@ -35,7 +42,19 @@ namespace ScanTerminal
                 throw new NullReferenceException("Please initialize Pricing first");
             }
 
-            var price = Pricing.GetPrice(code);
+            decimal price = -1m;
+            try
+            {
+                price = Pricing.GetPrice(code);
+            }
+            catch
+            {
+                _illegal = true;
+                Total = 0;
+                _scannedWithoutBulk.Clear();
+                throw;
+            }
+            
             
             var bulkPrice = Pricing.GetBulkPrice(code);
 
@@ -61,6 +80,13 @@ namespace ScanTerminal
                 Total += price;
             }
             
+        }
+
+        public void Reset()
+        {
+            Total = 0;
+            _scannedWithoutBulk.Clear();
+            _illegal = false;
         }
 
     }
