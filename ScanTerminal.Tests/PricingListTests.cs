@@ -9,6 +9,7 @@
 //
 //  Copyright (c) 2021 XuChunlei
 using System;
+using System.Collections.Generic;
 using AutoFixture;
 using Xunit;
 
@@ -47,8 +48,10 @@ namespace ScanTerminal.Tests
         {
             // Arrange
             Fixture fixture = new Fixture();
+            var price = fixture.Create<decimal>();
+            const string CODE = "A";
 
-            Product product = fixture.Create<Product>();
+            Product product = Product.Create(CODE, price);
 
             // Act
             Action actual = () => PricingList.Create()
@@ -64,15 +67,15 @@ namespace ScanTerminal.Tests
         public void AddProduct_Same_ThrowsInvalidOperationException()
         {
             // Arrange
-            Fixture fixture = new Fixture();
-            string code = fixture.Create<string>();
+            const string CODE = "A";
+            Fixture fixture = new();
             decimal price1 = fixture.Create<decimal>();
-            var product1 = Product.Create(code, price1);
+            var product1 = Product.Create(CODE, price1);
 
             decimal price2 = fixture.Create<decimal>();
             int bulkCount = fixture.Create<int>();
             decimal bulkPrice = fixture.Create<decimal>();
-            var product2 = BulkPriceProduct.Create(code, price2, bulkCount, bulkPrice);
+            var product2 = BulkPriceProduct.Create(CODE, price2, bulkCount, bulkPrice);
 
             // Act
             Action actual = () => PricingList.Create()
@@ -81,7 +84,7 @@ namespace ScanTerminal.Tests
 
             // Assert
             var exception = Assert.Throws<InvalidOperationException>(actual);
-            Assert.Equal($"Product {code} has been added to Unit Price", exception.Message);
+            Assert.Equal($"Product {CODE} has been added to Unit Price", exception.Message);
         }
 
         [Theory]
@@ -103,22 +106,26 @@ namespace ScanTerminal.Tests
             
         }
 
-        [Fact]
-        public void GetPrice_ProductNotExist_ThrowsInvalidOperationException()
+        [Theory]
+        [InlineData("a")]
+        [InlineData("B")]
+        public void GetPrice_ProductNotExist_ThrowsInvalidOperationException(string code)
         {
             // Arrange
             Fixture fixture = new();
+            const string EXIST_CODE = "A";
+            var price = fixture.Create<decimal>();
+            var product = Product.Create(EXIST_CODE, price);
             var pricingList = fixture.Create<PricingList>()
-                                     .AddProduct(fixture.Create<Product>())
-                                     .AddProduct(fixture.Create<BulkPriceProduct>());
-            var product1 = fixture.Create<Product>();
+                                     .AddProduct(product);
+            
 
             // Act
-            Action actual = () => pricingList.GetPrice(product1.Code);
+            Action actual = () => pricingList.GetPrice(code);
 
             // Assert
             var exception = Assert.Throws<InvalidOperationException>(actual);
-            Assert.Equal($"{product1.Code} product do not exist", exception.Message);
+            Assert.Equal($"{code} product do not exist", exception.Message);
 
         }
 
@@ -134,10 +141,8 @@ namespace ScanTerminal.Tests
 
             var price = fixture.Create<decimal>();
             var productA = Product.Create(code, price);
-            var pricingList = fixture.Create<PricingList>()
-                                     .AddProduct(productA)
-                                     .AddProduct(fixture.Create<Product>())
-                                     .AddProduct(fixture.Create<BulkPriceProduct>());
+            var pricingList = PricingList.Create()
+                                         .AddProduct(productA);
 
             // Act
             var unitPrice = pricingList.GetPrice(code);
@@ -181,9 +186,7 @@ namespace ScanTerminal.Tests
             var bulkPrice = fixture.Create<decimal>();
             var productA = BulkPriceProduct.Create(code, price, bulkCount, bulkPrice);
             var pricingList = fixture.Create<PricingList>()
-                                     .AddProduct(productA)
-                                     .AddProduct(fixture.Create<Product>())
-                                     .AddProduct(fixture.Create<BulkPriceProduct>());
+                                     .AddProduct(productA);
 
             // Act
             var unitPrice = pricingList.GetBulkPrice(code);
@@ -193,20 +196,26 @@ namespace ScanTerminal.Tests
 
         }
 
-        [Fact]
-        public void GetBulkPrice_ReturnsNull()
+        [Theory]
+        [InlineData("a")]
+        [InlineData("B")]
+        public void GetBulkPrice_ReturnsNull(string code)
         {
             // Arrange
             Fixture fixture = new();
+            const string CODE = "A";
+            
+            var price = fixture.Create<decimal>();
+            var bulkCount = fixture.Create<int>();
+            var bulkPrice = fixture.Create<decimal>();
 
-            var product = fixture.Create<BulkPriceProduct>();
+            var product = BulkPriceProduct.Create(CODE, price, bulkCount, bulkPrice);
             
             var pricingList = fixture.Create<PricingList>()
-                                     .AddProduct(fixture.Create<Product>())
-                                     .AddProduct(fixture.Create<BulkPriceProduct>());
+                                     .AddProduct(product);
 
             // Act
-            var unitPrice = pricingList.GetBulkPrice(product.Code);
+            var unitPrice = pricingList.GetBulkPrice(code);
 
             // Assert
             Assert.Null(unitPrice);

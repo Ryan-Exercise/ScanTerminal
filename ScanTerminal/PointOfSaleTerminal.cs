@@ -26,6 +26,10 @@ namespace ScanTerminal
 
         public void ScanProduct(string code)
         {
+            if(string.IsNullOrEmpty(code) || string.IsNullOrWhiteSpace(code))
+            {
+                return;
+            }
             if (Pricing == null)
             {
                 throw new NullReferenceException("Please initialize Pricing first");
@@ -39,7 +43,9 @@ namespace ScanTerminal
             if(_scannedWithoutBulk.TryGetValue(code, out count))
             {
                 count++;
-                if(bulkPrice != null)
+                _scannedWithoutBulk[code] = count;
+                Total += price;
+                if (bulkPrice != null)
                 {
                     if(count == bulkPrice.GetBulkCount())
                     {
@@ -48,8 +54,6 @@ namespace ScanTerminal
                        
                     }
                 }
-                _scannedWithoutBulk[code] = count;
-                Total += price;
             }
             else
             {

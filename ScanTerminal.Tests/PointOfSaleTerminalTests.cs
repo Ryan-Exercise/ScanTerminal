@@ -9,6 +9,7 @@
 //
 //  Copyright (c) 2021 XuChunlei
 using System;
+using System.Collections.Generic;
 using AutoFixture;
 using Xunit;
 
@@ -16,18 +17,32 @@ namespace ScanTerminal.Tests
 {
     public class PointOfSaleTerminalTests
     {
+        private readonly IReadOnlyList<Product> _products = new List<Product>()
+        {
+            Product.Create("A", 1.00m),
+            BulkPriceProduct.Create("B", 1.10m, 2, 2.00m),
+            Product.Create("C", 1.20m),
+            BulkPriceProduct.Create("D", 1.30m, 3, 3.00m),
+        }.AsReadOnly();
+
         [Theory]
         [InlineData("ABCD", 4.60)]
-        [InlineData("AAAA", 4.00)]
-        [InlineData("ABBA", 4.20)]
-        public void ScanProduct_WithoutBulkPrice_ComputeTotal(string cart, decimal total)
+        [InlineData("AB C  D  ", 4.60)]
+        [InlineData("", 0)]
+        [InlineData("   ", 0)]
+        [InlineData("ABCDD", 5.90)]
+        [InlineData("BBBBB", 5.10)]
+        [InlineData("BBDDD", 5.00)]
+        [InlineData("BBBDDDD", 7.40)]
+        [InlineData("ABABABCDCDCDCD", 15.20)]
+        public void ScanProduct_ValidProduct_ComputeTotal(string cart, decimal total)
         {
             // Arrange
-            var pricing = PricingList.Create()
-                                     .AddProduct(Product.Create("A", 1.00m))
-                                     .AddProduct(Product.Create("B", 1.10m))
-                                     .AddProduct(Product.Create("C", 1.20m))
-                                     .AddProduct(Product.Create("D", 1.30m));
+            var pricing = PricingList.Create();
+            foreach(var p in _products)
+            {
+                pricing.AddProduct(p);
+            }
             var terminal = new PointOfSaleTerminal(pricing);
 
             // Act
