@@ -8,7 +8,7 @@ namespace ScanTerminal
         public decimal Price { get; set; }
         public string Code { get; private set;  }
         // define more properties here, unit, description and color e.g.
-
+        
         protected Product(string code, decimal price)
         {
             Price = price;

@@ -7,14 +7,17 @@ In order to simplify the programming, the project is implemented under the follo
 3. Bulk Count should be no less than **2**.
 4. Unit Price and Bulk Price cannot be **negative**.
 5. Once a **nonexistent** Code is scanned, terminal will be in illegal state and **unavailable** until **Reset()** being called. Result will be **abandoned**.
+6. PricingList didn't provide **Remove method** for delete a product from the list
+7. ScanTerminal **cannot cancel** scanning.
 
 ## Design Trade-off
-Bulk Price is abstracted to be **IBulkPriceHolder** interface. There are two ways working with **Product** class.
+1. Bulk Price is abstracted to be **IBulkPriceHolder** interface. There are two ways working with **Product** class.
 
-1. Create a new Class that implements this interface known as **BulkPriceProduct**.
-2. Inject the instance of it into Product class as a **property**.
+*  Create a new Class that implements this interface known as **BulkPriceProduct**.
+*  Inject the instance of it into Product class as a **property**.
 
 My implementation is 1 for Bulk Price being specific to each product. IBulkPriceHolder also means the class which implements it will do extra computation under the condition it specifies.
+
 
 ## Key Test Cases
 Each class has its corresponding unit test class. The following test cases are important to prove the library works.
@@ -29,7 +32,7 @@ Describe here briefly for convenience of reviewing the code.
 | C              | $1.00           |$5 for a six-pack|
 | D              | $0.75           |               |
 
-###Test Case List
+### Test Case List
 
 | TEST CASE  | Description |
 |:-------------: |:---------------|
